@@ -14,7 +14,7 @@ frontend:
   image:
     repository: rajeshkosta/application-code-frontend
     pullPolicy: Always
-    tag: v1
+    tag: v2
 
   service:
     type: ClusterIP
