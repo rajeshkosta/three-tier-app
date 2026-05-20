@@ -1,0 +1,28 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: wanderlust
+  namespace: argocd
+
+spec:
+  project: default
+
+  source:
+    repoURL: https://github.com/rajeshkosta/three-tier-app.git
+    targetRevision: main
+    path: helm-chart
+
+    helm:
+      valueFiles:
+        - values.yaml
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+
+
