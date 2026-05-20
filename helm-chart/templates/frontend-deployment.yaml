@@ -1,0 +1,79 @@
+{{- if .Values.frontend.enabled }}
+
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: frontend
+
+spec:
+  replicas: {{ .Values.frontend.replicaCount }}
+
+  selector:
+    matchLabels:
+      app: frontend
+
+  template:
+    metadata:
+      labels:
+        app: frontend
+
+    spec:
+
+      strategy:
+        type: {{ .Values.frontend.strategy.type }}
+        rollingUpdate:
+          maxSurge: {{ .Values.frontend.strategy.rollingUpdate.maxSurge }}
+          maxUnavailable: {{ .Values.frontend.strategy.rollingUpdate.maxUnavailable }}
+
+      nodeSelector:
+        {{- toYaml .Values.frontend.nodeSelector | nindent 8 }}
+
+      affinity:
+        {{- toYaml .Values.frontend.affinity | nindent 8 }}
+
+      tolerations:
+        {{- toYaml .Values.frontend.tolerations | nindent 8 }}
+
+      containers:
+      - name: frontend
+
+        image: "{{ .Values.frontend.image.repository }}:{{ .Values.frontend.image.tag }}"
+
+        imagePullPolicy: {{ .Values.frontend.image.pullPolicy }}
+
+        ports:
+        - containerPort: {{ .Values.frontend.service.port }}
+
+        resources:
+          {{- toYaml .Values.frontend.resources | nindent 10 }}
+
+        livenessProbe:
+          {{- toYaml .Values.frontend.livenessProbe | nindent 10 }}
+
+        readinessProbe:
+          {{- toYaml .Values.frontend.readinessProbe | nindent 10 }}
+
+{{- end }}
+
+---
+
+{{- if .Values.frontend.enabled }}
+
+apiVersion: v1
+kind: Service
+
+metadata:
+  name: frontend
+
+spec:
+  type: {{ .Values.frontend.service.type }}
+
+  selector:
+    app: frontend
+
+  ports:
+  - port: {{ .Values.frontend.service.port }}
+    targetPort: {{ .Values.frontend.service.port }}
+
+{{- end }}

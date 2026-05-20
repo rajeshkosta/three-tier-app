@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-env
+
+data:
+  NODE_ENV: {{ .Values.backend.env.NODE_ENV | quote }}
+  PORT: {{ .Values.backend.env.PORT | quote }}
+  MONGODB_URI: {{ .Values.backend.env.MONGODB_URI | quote }}
+  REDIS_URL: {{ .Values.backend.env.REDIS_URL | quote }}
