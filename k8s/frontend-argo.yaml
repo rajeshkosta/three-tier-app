@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: wanderlust
+  name: tta-frontend
   namespace: argocd
 
 spec:
@@ -10,19 +10,16 @@ spec:
   source:
     repoURL: https://github.com/rajeshkosta/three-tier-app.git
     targetRevision: main
-    path: helm-chart
-
-    helm:
-      valueFiles:
-        - values.yaml
+    path: k8s/frontend
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: default
+    namespace: application
 
   syncPolicy:
     automated:
       prune: true
       selfHeal: true
 
-
+    syncOptions:
+      - CreateNamespace=true
