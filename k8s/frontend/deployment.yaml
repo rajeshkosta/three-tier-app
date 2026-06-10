@@ -35,11 +35,11 @@ spec:
         runAsGroup: 101
         fsGroup: 101
 
-#      tolerations:
-#        - key: "dedicated"
-#          operator: "Equal"
-#          value: "application"
-#          effect: "NoSchedule"
+      tolerations:
+        - key: "dedicated"
+          operator: "Equal"
+          value: "application"
+          effect: "NoSchedule"
 
       affinity:
         nodeAffinity:
