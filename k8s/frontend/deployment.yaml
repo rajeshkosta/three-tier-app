@@ -1,0 +1,139 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: application
+  labels:
+    app: frontend
+
+spec:
+  replicas: 1
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: frontend
+
+  template:
+    metadata:
+      labels:
+        app: frontend
+
+    spec:
+      serviceAccountName: frontend-sa
+
+#      imagePullSecrets:
+#        - name: <docker-secret>
+
+      securityContext:
+        runAsUser: 101
+        runAsGroup: 101
+        fsGroup: 101
+
+#      tolerations:
+#        - key: "dedicated"
+#          operator: "Equal"
+#          value: "application"
+#          effect: "NoSchedule"
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: workload
+                    operator: In
+                    values:
+                      - application
+
+      initContainers:
+        - name: init-container
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - echo "Waiting for dependency..." && sleep 10
+
+      containers:
+        - name: frontend
+          image: rajeshkosta/frontend-tta:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 80
+
+          envFrom:
+            - configMapRef:
+                name: config-map
+            - secretRef:
+                name: secret-map
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          startupProbe:
+            httpGet:
+              path: /
+              port: 80
+            failureThreshold: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: nginx-cache
+              mountPath: /var/cache/nginx
+            - name: nginx-run
+              mountPath: /var/run
+
+      volumes:
+        - name: nginx-cache
+          emptyDir: {}
+        - name: nginx-run
+          emptyDir: {}
+
+
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-svc
+  namespace: application
+
+spec:
+  type: ClusterIP   # ClusterIP | NodePort | LoadBalancer
+
+  selector:
+    app: frontend
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+
+

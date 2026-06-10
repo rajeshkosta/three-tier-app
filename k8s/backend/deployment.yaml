@@ -1,0 +1,127 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: application
+  labels:
+    app: backend
+
+spec:
+  replicas: 3
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 1
+
+  selector:
+    matchLabels:
+      app: backend
+
+  template:
+    metadata:
+      labels:
+        app: backend
+
+    spec:
+      serviceAccountName: backend-sa
+
+#      imagePullSecrets:
+#        - name: dockerhub-secret
+
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+
+#      tolerations:
+#        - key: "dedicated"
+#          operator: "Equal"
+#          value: "application"
+#          effect: "NoSchedule"
+
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: workload
+                    operator: In
+                    values:
+                      - application
+
+      initContainers:
+        - name: init-container
+          image: busybox:latest
+          command:
+            - sh
+            - -c
+            - |
+              echo "Waiting for dependency..."
+              sleep 10
+
+      containers:
+        - name: backend
+          image: rajeshkosta/backend-tta:latest
+          imagePullPolicy: Always
+
+          ports:
+            - containerPort: 3500
+
+          envFrom:
+            - configMapRef:
+                name: config-map
+            - secretRef:
+                name: secret-map
+
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+
+          startupProbe:
+            httpGet:
+              path: /ok
+              port: 3500
+            failureThreshold: 30
+            periodSeconds: 10
+
+          readinessProbe:
+            httpGet:
+              path: /ok
+              port: 3500
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+          livenessProbe:
+            httpGet:
+              path: /ok
+              port: 3500
+            initialDelaySeconds: 15
+            periodSeconds: 10
+
+          volumeMounts:
+            - name: app-storage
+              mountPath: /data
+
+      volumes:
+        - name: app-storage
+          emptyDir: {}
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-svc
+  namespace: application
+spec:
+  selector:
+    app: backend
+  ports:
+    - port: 80
+      targetPort: 3500
