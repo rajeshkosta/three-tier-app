@@ -3,7 +3,7 @@ pipeline {
 agent any
 
 environment {
-    IMAGE_NAME = "rajeshkosta/wanderlust-"
+    IMAGE_NAME = "rajeshkosta/wanderlust"
     TAG = "${BUILD_NUMBER}"
     APP_LANG = ""
 }
