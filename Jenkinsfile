@@ -3,7 +3,7 @@ pipeline {
 agent any
 
 environment {
-    IMAGE_NAME = "rajeshkosta/app"
+    IMAGE_NAME = "rajeshkosta/wanderlust-"
     TAG = "${BUILD_NUMBER}"
     APP_LANG = ""
 }
@@ -191,16 +191,30 @@ stages {
         }
     }
 
-    stage('Build Docker Image') {
+    stage('Build Frontend Image') {
 
         steps {
-
             sh """
             docker build \
-            -t ${IMAGE_NAME}:${TAG} .
+            -t ${IMAGE_NAME}:${TAG} \
+            -f Application-Code/frontend/Dockerfile \
+            Application-Code/frontend
             """
         }
     }
+
+    stage('Build Backend Image') {
+
+        steps {
+            sh """
+            docker build \
+            -t ${IMAGE_NAME}:${TAG} \
+            -f Application-Code/backend/Dockerfile \
+            Application-Code/backend
+            """
+        }
+    }
+    
 
     stage('Trivy Image Scan') {
 
