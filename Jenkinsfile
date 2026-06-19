@@ -318,33 +318,32 @@ stages {
     }
 } 
 
-
-
-                
-
-
-
-
     
 
 post {
 
     always {
 
-        archiveArtifacts(
-            artifacts: '''
-            reports/**/*,
-            **/target/*.jar,
-            **/target/surefire-reports/**/*,
-            **/dist/**/*,
-            **/build/**/*,
-            **/*.log
-            '''.trim(),
-            fingerprint: true,
-            allowEmptyArchive: true
-        )
+        script {
 
-        cleanWs()
+            if (fileExists('.')) {
+
+                archiveArtifacts(
+                    artifacts: '''
+                    reports/**/*,
+                    **/target/*.jar,
+                    **/target/surefire-reports/**/*,
+                    **/dist/**/*,
+                    **/build/**/*,
+                    **/*.log
+                    '''.trim(),
+                    fingerprint: true,
+                    allowEmptyArchive: true
+                )
+            }
+        }
+
+        cleanWs notFailBuild: true
     }
 
     success {
