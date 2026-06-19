@@ -193,10 +193,15 @@ stages {
 
     stage('Build Frontend Image') {
 
+        when {
+            expression {
+                fileExists('Application-Code/frontend/Dockerfile')
+            }
+        }
         steps {
             sh """
             docker build \
-            -t ${IMAGE_NAME}:${TAG} \
+            -t ${FRONTEND_IMAGE}:${TAG} \
             -f Application-Code/frontend/Dockerfile \
             Application-Code/frontend
             """
@@ -204,13 +209,20 @@ stages {
     }
 
     
+    
 
     stage('Build Backend Image') {
+
+        when {
+            expression {
+                fileExists('Application-Code/backend/Dockerfile')
+            }
+        }
 
         steps {
             sh """
             docker build \
-            -t ${IMAGE_NAME}:${TAG} \
+            -t ${BACKEND_IMAGE}:${TAG} \
             -f Application-Code/backend/Dockerfile \
             Application-Code/backend
             """
@@ -226,8 +238,8 @@ stages {
 
                 sh """
                 mkdir -p reports
-                trivy image --format json --output reports/trivy-frontend-image-report.json frontend:${BUILD_NUMBER}
-                trivy image --format json --output reports/trivy-backend-image-report.json backend:${BUILD_NUMBER}
+                trivy image --format json --output reports/trivy-frontend-image-report.json ${FRONTEND_IMAGE}:${TAG}
+                trivy image --format json --output reports/trivy-backend-image-report.json ${BACKEND_IMAGE}:${TAG}
                 """
             }
         }
@@ -247,17 +259,16 @@ stages {
                 )
             ]) {
 
-                sh ''' echo "$NEXUS_PASS" | docker login nexus:8082 -u "$NEXUS_USER" --password-stdin '''
+                sh '''
+                echo "$NEXUS_PASS" | docker login nexus:8082 -u "$NEXUS_USER" --password-stdin
+                echo "$NEXUS_PASS" | docker login nexus:8083 -u "$NEXUS_USER" --password-stdin
 
-                sh """ docker tag frontend:${TAG} nexus:8082/frontend-tta:${TAG} 
-                docker push nexus:8082/frontend-tta:${TAG} 
-                """
-                
-                sh ''' echo "$NEXUS_PASS" | docker login nexus:8083 -u "$NEXUS_USER" --password-stdin '''
+                docker tag frontend:${TAG} nexus:8082/frontend-tta:${TAG}
+                docker push nexus:8082/frontend-tta:${TAG}
 
-                sh """ docker tag backend:${TAG} nexus:8083/backend-tta:${TAG} 
-                docker push nexus:8083/backend-tta:${TAG} 
-                """
+                docker tag backend:${TAG} nexus:8083/backend-tta:${TAG}
+                docker push nexus:8083/backend-tta:${TAG}
+                '''
             }
         }
     }
