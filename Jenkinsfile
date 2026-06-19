@@ -6,6 +6,7 @@ environment {
     FRONTEND_IMAGE = "frontend"
     BACKEND_IMAGE = "backend"
     TAG = "${BUILD_NUMBER}"
+    SCANNER_HOME = tool 'sonar-scanner'
 }
 
 stages {
@@ -170,23 +171,66 @@ stages {
 
     stage('SonarQube Scan') {
 
-        when {
-            expression {
-                env.APP_LANG == "java"
-            }
-        }
-
         steps {
 
             withSonarQubeEnv('sonar') {
 
-                dir('Application-Code/backend') {
+                script {
 
-                    sh '''
-                    mvn sonar:sonar \
-                    -Dsonar.projectKey=backend
-                    '''
+                    switch(env.APP_LANG) {
+
+                        case "java":
+                            dir('Application-Code/backend') {
+                                sh '''
+                                mvn sonar:sonar \
+                                -Dsonar.projectKey=backend
+                                '''
+                            }
+                            break
+
+                        case "nodejs":
+                            dir('Application-Code/backend') {
+                                sh """
+                                ${SCANNER_HOME}/bin/sonar-scanner \
+                                -Dsonar.projectKey=backend \
+                                -Dsonar.sources=. \
+                                -Dsonar.sourceEncoding=UTF-8
+                                """
+                            }
+                            break
+
+                        case "python":
+                            dir('Application-Code/backend') {
+                                sh """
+                                ${SCANNER_HOME}/bin/sonar-scanner \
+                                -Dsonar.projectKey=backend \
+                                -Dsonar.sources=.
+                                """
+                            }
+                            break
+
+                        case "golang":
+                            dir('Application-Code/backend') {
+                                sh """
+                                ${SCANNER_HOME}/bin/sonar-scanner \
+                                -Dsonar.projectKey=backend \
+                                -Dsonar.sources=.
+                                """
+                            }
+                            break
+                    }
                 }
+            }
+        }
+    }
+
+    stage('Quality Gate') {
+
+        steps {
+
+            timeout(time: 10, unit: 'MINUTES') {
+
+                waitForQualityGate abortPipeline: false
             }
         }
     }
