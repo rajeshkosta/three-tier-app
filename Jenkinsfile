@@ -260,14 +260,14 @@ stages {
             ]) {
 
                 sh '''
-                echo "$NEXUS_PASS" | docker login nexus:8082 -u "$NEXUS_USER" --password-stdin
-                echo "$NEXUS_PASS" | docker login nexus:8083 -u "$NEXUS_USER" --password-stdin
+                echo "$NEXUS_PASS" | docker login localhost:8082 -u "$NEXUS_USER" --password-stdin
+                echo "$NEXUS_PASS" | docker login localhost:8083 -u "$NEXUS_USER" --password-stdin
 
-                docker tag frontend:${TAG} nexus:8082/frontend-tta:${TAG}
-                docker push nexus:8082/frontend-tta:${TAG}
+                docker tag frontend:${TAG} localhost:8082/frontend-tta:${TAG}
+                docker push localhost:8082/frontend-tta:${TAG}
 
-                docker tag backend:${TAG} nexus:8083/backend-tta:${TAG}
-                docker push nexus:8083/backend-tta:${TAG}
+                docker tag backend:${TAG} localhost:8083/backend-tta:${TAG}
+                docker push localhost:8083/backend-tta:${TAG}
                 '''
             }
         }
