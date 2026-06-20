@@ -303,15 +303,22 @@ stages {
                 )
             ]) {
 
-                sh '''
-                echo "$NEXUS_PASS" | docker login localhost:8082 -u "$NEXUS_USER" --password-stdin
+               sh '''
                 echo "$NEXUS_PASS" | docker login localhost:8083 -u "$NEXUS_USER" --password-stdin
 
-                docker tag frontend:${TAG} localhost:8082/frontend-tta:${TAG}
-                docker push localhost:8082/frontend-tta:${TAG}
+                # ---------------- FRONTEND ----------------
+                docker tag frontend:${TAG} localhost:8083/three-tier-app/frontend:${TAG}
+                docker push localhost:8083/three-tier-app//frontend:${TAG}
 
-                docker tag backend:${TAG} localhost:8083/backend-tta:${TAG}
-                docker push localhost:8083/backend-tta:${TAG}
+                # ---------------- BACKEND ----------------
+                docker tag backend:${TAG} localhost:8083/three-tier-app/backend:${TAG}
+                docker push localhost:8083/three-tier-app/backend:${TAG}
+                
+                # Remove local tags
+                docker rmi frontend:${TAG} || true
+                docker rmi backend:${TAG} || true   
+                docker rmi localhost:8083/three-tier-app/frontend:${TAG} || true
+                docker rmi localhost:8083/three-tier-app/backend:${TAG} || true
                 '''
             }
         }
@@ -336,6 +343,13 @@ post {
                     **/dist/**/*,
                     **/build/**/*,
                     **/*.log
+                    '''.trim(),
+                   
+                    excludes: '''
+                    **/node_modules/**,
+                    **/Application-Code/**/node_modules/**,
+                    **/.npm/**,
+                    **/.cache/**
                     '''.trim(),
                     fingerprint: true,
                     allowEmptyArchive: true
