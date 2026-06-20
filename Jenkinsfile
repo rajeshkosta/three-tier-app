@@ -308,7 +308,7 @@ stages {
 
                 # ---------------- FRONTEND ----------------
                 docker tag frontend:${TAG} localhost:8083/three-tier-app/frontend:${TAG}
-                docker push localhost:8083/three-tier-app//frontend:${TAG}
+                docker push localhost:8083/three-tier-app/frontend:${TAG}
 
                 # ---------------- BACKEND ----------------
                 docker tag backend:${TAG} localhost:8083/three-tier-app/backend:${TAG}
