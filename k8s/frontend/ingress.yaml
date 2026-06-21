@@ -15,7 +15,7 @@ spec:
         pathType: Prefix
         backend:
           service:
-            name: frontend-active
+            name: frontend-preview
             port:
               number: 80
 
