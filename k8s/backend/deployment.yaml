@@ -63,7 +63,7 @@ spec:
 
       containers:
         - name: backend
-          image: rajeshkosta/backend-tta:latest
+          image: rajeshkosta/three-tier-backend:11
           imagePullPolicy: Always
 
           ports:

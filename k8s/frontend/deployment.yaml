@@ -27,8 +27,8 @@ spec:
     spec:
       serviceAccountName: frontend-sa
 
-#      imagePullSecrets:
-#        - name: <docker-secret>
+      imagePullSecrets:
+        - name: nexus-secret
 
       securityContext:
         runAsUser: 101
@@ -61,7 +61,7 @@ spec:
 
       containers:
         - name: frontend
-          image: rajeshkosta/frontend-tta:latest
+          image: rajeshkosta/three-tier-frontend:11
           imagePullPolicy: Always
 
           ports:
