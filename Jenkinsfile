@@ -291,36 +291,37 @@ stages {
 
     
     
-    stage('Push Docker Images to Nexus') {
+stage('Push Docker Images to Docker Hub') {
 
-        steps {
+    steps {
 
-            withCredentials([
-                usernamePassword(
-                    credentialsId: 'nexus-cred',
-                    usernameVariable: 'NEXUS_USER',
-                    passwordVariable: 'NEXUS_PASS'
-                )
-            ]) {
+        withCredentials([
+            usernamePassword(
+                credentialsId: 'dockerhub-creds',
+                usernameVariable: 'DOCKER_USER',
+                passwordVariable: 'DOCKER_PASS'
+            )
+        ]) {
 
-               sh '''
-                echo "$NEXUS_PASS" | docker login localhost:8083 -u "$NEXUS_USER" --password-stdin
+            sh '''
+            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-                # ---------------- FRONTEND ----------------
-                docker tag frontend:${TAG} localhost:8083/three-tier-app/frontend:${TAG}
-                docker push localhost:8083/three-tier-app/frontend:${TAG}
+            # Frontend
+            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:${TAG}
+            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:latest
 
-                # ---------------- BACKEND ----------------
-                docker tag backend:${TAG} localhost:8083/three-tier-app/backend:${TAG}
-                docker push localhost:8083/three-tier-app/backend:${TAG}
-                
-                # Remove local tags
-                docker rmi frontend:${TAG} || true
-                docker rmi backend:${TAG} || true   
-                docker rmi localhost:8083/three-tier-app/frontend:${TAG} || true
-                docker rmi localhost:8083/three-tier-app/backend:${TAG} || true
-                '''
-            }
+            docker push $DOCKER_USER/three-tier-frontend:${TAG}
+            docker push $DOCKER_USER/three-tier-frontend:latest
+
+            # Backend
+            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:${TAG}
+            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:latest
+
+            docker push $DOCKER_USER/three-tier-backend:${TAG}
+            docker push $DOCKER_USER/three-tier-backend:latest
+
+            docker logout
+            '''
         }
     }
 } 
