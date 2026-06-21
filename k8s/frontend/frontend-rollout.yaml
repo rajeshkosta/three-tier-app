@@ -59,7 +59,7 @@ spec:
 
       containers:
         - name: frontend
-          image: rajeshkosta/three-tier-frontend:12
+          image: rajeshkosta/three-tier-frontend:11
           imagePullPolicy: Always
 
           ports:
