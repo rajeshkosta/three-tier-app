@@ -1,9 +1,13 @@
-FROM node:14 AS build
+# Production-ready Dockerfile for React frontend
+FROM node:20 AS build
 WORKDIR /app
-COPY . .
+COPY package*.json ./
 RUN npm install
-RUN npm run build
+COPY . .
+ENV NODE_OPTIONS=--openssl-legacy-provider
+RUN npm run build   # builds optimized static files into /app/build
 
+# NGINX stage to serve frontend
 FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 EXPOSE 80
