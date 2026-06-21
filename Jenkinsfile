@@ -328,34 +328,28 @@ stages {
     
 
 post {
-
     always {
 
-        script {
+        archiveArtifacts(
+            artifacts: '''
+            reports/**/*,
+            **/target/*.jar,
+            **/target/surefire-reports/**/*,
+            **/dist/**/*,
+            **/build/**/*,
+            **/*.log
+            '''.trim(),
 
-            if (fileExists('.')) {
+            excludes: '''
+            **/node_modules/**,
+            **/Application-Code/**/node_modules/**,
+            **/.npm/**,
+            **/.cache/**
+            '''.trim(),
 
-                archiveArtifacts(
-                    artifacts: '''
-                    reports/**/*,
-                    **/target/*.jar,
-                    **/target/surefire-reports/**/*,
-                    **/dist/**/*,
-                    **/build/**/*,
-                    **/*.log
-                    '''.trim(),
-                   
-                    excludes: '''
-                    **/node_modules/**,
-                    **/Application-Code/**/node_modules/**,
-                    **/.npm/**,
-                    **/.cache/**
-                    '''.trim(),
-                    fingerprint: true,
-                    allowEmptyArchive: true
-                )
-            }
-        }
+            fingerprint: true,
+            allowEmptyArchive: true
+        )
 
         cleanWs notFailBuild: true
     }
@@ -371,6 +365,4 @@ post {
     failure {
         echo 'Pipeline Failed'
     }
-}
-
 }
