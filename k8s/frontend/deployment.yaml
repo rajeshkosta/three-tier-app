@@ -1,19 +1,17 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: frontend
   namespace: application
-  labels:
-    app: frontend
 
 spec:
-  replicas: 1
+  replicas: 3
 
   strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+    blueGreen:
+      activeService: frontend-active
+      previewService: frontend-preview
+      autoPromotionEnabled: false
 
   selector:
     matchLabels:
@@ -121,7 +119,7 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: frontend-svc
+  name: frontend-active
   namespace: application
 
 spec:
@@ -136,4 +134,22 @@ spec:
       targetPort: 80
       protocol: TCP
 
+---
 
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-preview
+  namespace: application
+
+spec:
+  type: ClusterIP   # ClusterIP | NodePort | LoadBalancer
+
+  selector:
+    app: frontend
+
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
