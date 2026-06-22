@@ -4,6 +4,7 @@ agent any
 
 environment {
     FRONTEND_IMAGE = "frontend"
+    ADMIN_IMAGE = "admin"
     BACKEND_IMAGE = "backend"
     TAG = "${BUILD_NUMBER}"
     SCANNER_HOME = tool 'sonar-scanner'
@@ -121,6 +122,25 @@ stages {
 
             dir('Application-Code/frontend') {
 
+                sh '''
+                export NODE_OPTIONS=--openssl-legacy-provider
+                npm install
+                npm run build
+                '''
+            }
+        }
+    }
+
+    stage('Admin Build') {
+
+        when {
+            expression {
+                fileExists('Application-Code/admin/package.json')
+            }
+        }
+
+        steps {
+            dir('Application-Code/admin') {
                 sh '''
                 export NODE_OPTIONS=--openssl-legacy-provider
                 npm install
@@ -272,6 +292,24 @@ stages {
             """
         }
     }
+
+    stage('Build admin Image') {
+
+        when {
+            expression {
+                fileExists('Application-Code/admin/Dockerfile')
+            }
+        }
+
+        steps {
+            sh """
+            docker build \
+            -t ${ADMIN_IMAGE}:${TAG} \
+            -f Application-Code/admin/Dockerfile \
+            Application-Code/admin
+            """
+        }
+    }
     
 
     stage('Trivy Image Scan') {
@@ -290,8 +328,7 @@ stages {
     }
 
     
-    
-stage('Push Docker Images to Docker Hub') {
+    stage('Push Docker Images to Docker Hub') {
 
     steps {
 
@@ -306,21 +343,35 @@ stage('Push Docker Images to Docker Hub') {
             sh '''
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-            # Frontend
-            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:${TAG}
-            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:latest
+            # Push images
+            docker push $DOCKER_USER/trimmy-frontend:${TAG}
+            docker push $DOCKER_USER/trimmy-frontend:latest
 
-            docker push $DOCKER_USER/three-tier-frontend:${TAG}
-            docker push $DOCKER_USER/three-tier-frontend:latest
+            docker push $DOCKER_USER/trimmy-backend:${TAG}
+            docker push $DOCKER_USER/trimmy-backend:latest
 
-            # Backend
-            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:${TAG}
-            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:latest
+            docker push $DOCKER_USER/trimmy-admin:${TAG}
+            docker push $DOCKER_USER/trimmy-admin:latest
 
-            docker push $DOCKER_USER/three-tier-backend:${TAG}
-            docker push $DOCKER_USER/three-tier-backend:latest
+            # Remove local tags
+            docker rmi $DOCKER_USER/trimmy-frontend:${TAG} || true
+            docker rmi $DOCKER_USER/trimmy-frontend:latest || true
+
+            docker rmi $DOCKER_USER/trimmy-backend:${TAG} || true
+            docker rmi $DOCKER_USER/trimmy-backend:latest || true
+
+            docker rmi $DOCKER_USER/trimmy-admin:${TAG} || true
+            docker rmi $DOCKER_USER/trimmy-admin:latest || true
+
+            # Optional: remove original images
+            docker rmi frontend:${TAG} || true
+            docker rmi backend:${TAG} || true
+            docker rmi admin:${TAG} || true
 
             docker logout
+
+            # Cleanup unused layers
+            docker image prune -af || true
             '''
         }
     }
@@ -330,28 +381,34 @@ stage('Push Docker Images to Docker Hub') {
     
 
 post {
+
     always {
 
-        archiveArtifacts(
-            artifacts: '''
-            reports/**/*,
-            **/target/*.jar,
-            **/target/surefire-reports/**/*,
-            **/dist/**/*,
-            **/build/**/*,
-            **/*.log
-            '''.trim(),
+        script {
 
-            excludes: '''
-            **/node_modules/**,
-            **/Application-Code/**/node_modules/**,
-            **/.npm/**,
-            **/.cache/**
-            '''.trim(),
+            if (fileExists('.')) {
 
-            fingerprint: true,
-            allowEmptyArchive: true
-        )
+                archiveArtifacts(
+                    artifacts: '''
+                    reports/**/*,
+                    **/target/*.jar,
+                    **/target/surefire-reports/**/*,
+                    **/dist/**/*,
+                    **/build/**/*,
+                    **/*.log
+                    '''.trim(),
+                   
+                    excludes: '''
+                    **/node_modules/**,
+                    **/Application-Code/**/node_modules/**,
+                    **/.npm/**,
+                    **/.cache/**
+                    '''.trim(),
+                    fingerprint: true,
+                    allowEmptyArchive: true
+                )
+            }
+        }
 
         cleanWs notFailBuild: true
     }
