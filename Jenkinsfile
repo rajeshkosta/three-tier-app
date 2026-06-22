@@ -341,37 +341,51 @@ stages {
         ]) {
 
             sh '''
+            # Login
             echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
 
-            # Push images
-            docker push $DOCKER_USER/trimmy-frontend:${TAG}
-            docker push $DOCKER_USER/trimmy-frontend:latest
+            # Build Images
+            docker build -t frontend:${TAG} ./Application-Code/frontend
+            docker build -t backend:${TAG} ./Application-Code/backend
+            docker build -t admin:${TAG} ./Application-Code/admin
 
-            docker push $DOCKER_USER/trimmy-backend:${TAG}
-            docker push $DOCKER_USER/trimmy-backend:latest
+            # Tag Images
+            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:${TAG}
+            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:latest
 
-            docker push $DOCKER_USER/trimmy-admin:${TAG}
-            docker push $DOCKER_USER/trimmy-admin:latest
+            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:${TAG}
+            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:latest
 
-            # Remove local tags
-            docker rmi $DOCKER_USER/trimmy-frontend:${TAG} || true
-            docker rmi $DOCKER_USER/trimmy-frontend:latest || true
+            docker tag admin:${TAG} $DOCKER_USER/three-tier-admin:${TAG}
+            docker tag admin:${TAG} $DOCKER_USER/three-tier-admin:latest
 
-            docker rmi $DOCKER_USER/trimmy-backend:${TAG} || true
-            docker rmi $DOCKER_USER/trimmy-backend:latest || true
+            # Push Images
+            docker push $DOCKER_USER/three-tier-frontend:${TAG}
+            docker push $DOCKER_USER/three-tier-frontend:latest
 
-            docker rmi $DOCKER_USER/trimmy-admin:${TAG} || true
-            docker rmi $DOCKER_USER/trimmy-admin:latest || true
+            docker push $DOCKER_USER/three-tier-backend:${TAG}
+            docker push $DOCKER_USER/three-tier-backend:latest
 
-            # Optional: remove original images
+            docker push $DOCKER_USER/three-tier-admin:${TAG}
+            docker push $DOCKER_USER/three-tier-admin:latest
+
+            # Cleanup
             docker rmi frontend:${TAG} || true
             docker rmi backend:${TAG} || true
             docker rmi admin:${TAG} || true
 
-            docker logout
+            docker rmi $DOCKER_USER/three-tier-frontend:${TAG} || true
+            docker rmi $DOCKER_USER/three-tier-frontend:latest || true
 
-            # Cleanup unused layers
+            docker rmi $DOCKER_USER/three-tier-backend:${TAG} || true
+            docker rmi $DOCKER_USER/three-tier-backend:latest || true
+
+            docker rmi $DOCKER_USER/three-tier-admin:${TAG} || true
+            docker rmi $DOCKER_USER/three-tier-admin:latest || true
+
             docker image prune -af || true
+
+            docker logout
             '''
         }
     }
