@@ -354,26 +354,26 @@ stages {
 
             # Tag Images
 
-            docker tag frontend:${TAG} $ECR_URL/frontend:${TAG}
-            docker tag frontend:${TAG} $ECR_URL/frontend:latest
+            docker tag frontend:${TAG} $ECR_URL/three-tier-frontend:${TAG}
+            docker tag frontend:${TAG} $ECR_URL/three-tier-frontend:latest
 
-            docker tag backend:${TAG} $ECR_URL/backend:${TAG}
-            docker tag backend:${TAG} $ECR_URL/backend:latest
+            docker tag backend:${TAG} $ECR_URL/three-tier-backend:${TAG}
+            docker tag backend:${TAG} $ECR_URL/three-tier-backend:latest
 
-            docker tag admin:${TAG} $ECR_URL/admin:${TAG}
-            docker tag admin:${TAG} $ECR_URL/admin:latest
+            docker tag admin:${TAG} $ECR_URL/three-tier-admin:${TAG}
+            docker tag admin:${TAG} $ECR_URL/three-tier-admin:latest
 
             # Push Frontend
-            docker push $ECR_URL/frontend:${TAG}
-            docker push $ECR_URL/frontend:latest
+            docker push $ECR_URL/three-tier-frontend:${TAG}
+            docker push $ECR_URL/three-tier-frontend:latest
 
             # Push Backend
-            docker push $ECR_URL/backend:${TAG}
-            docker push $ECR_URL/backend:latest
+            docker push $ECR_URL/three-tier-backend:${TAG}
+            docker push $ECR_URL/three-tier-backend:latest
 
             # Push Admin
-            docker push $ECR_URL/admin:${TAG}
-            docker push $ECR_URL/admin:latest
+            docker push $ECR_URL/three-tier-admin:${TAG}
+            docker push $ECR_URL/three-tier-admin:latest
 
             docker logout $ECR_URL
             '''
