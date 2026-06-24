@@ -328,21 +328,24 @@ stages {
     }
 
     
-    stage('Push Docker Images to Docker Hub') {
+    stage('Build & Push Docker Images to ECR') {
 
     steps {
 
         withCredentials([
-            usernamePassword(
-                credentialsId: 'dockerhub-creds',
-                usernameVariable: 'DOCKER_USER',
-                passwordVariable: 'DOCKER_PASS'
-            )
+            [$class: 'AmazonWebServicesCredentialsBinding',
+             credentialsId: 'aws-ecr-cred']
         ]) {
 
             sh '''
-            # Login
-            echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
+            ACCOUNT_ID=593402827159
+            AWS_REGION=ap-south-1
+
+            ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+
+            # Login to ECR
+            aws ecr get-login-password --region $AWS_REGION | \
+            docker login --username AWS --password-stdin $ECR_URL
 
             # Build Images
             docker build -t frontend:${TAG} ./Application-Code/frontend
@@ -350,46 +353,33 @@ stages {
             docker build -t admin:${TAG} ./Application-Code/admin
 
             # Tag Images
-            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:${TAG}
-            docker tag frontend:${TAG} $DOCKER_USER/three-tier-frontend:latest
 
-            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:${TAG}
-            docker tag backend:${TAG} $DOCKER_USER/three-tier-backend:latest
+            docker tag frontend:${TAG} $ECR_URL/frontend:${TAG}
+            docker tag frontend:${TAG} $ECR_URL/frontend:latest
 
-            docker tag admin:${TAG} $DOCKER_USER/three-tier-admin:${TAG}
-            docker tag admin:${TAG} $DOCKER_USER/three-tier-admin:latest
+            docker tag backend:${TAG} $ECR_URL/backend:${TAG}
+            docker tag backend:${TAG} $ECR_URL/backend:latest
 
-            # Push Images
-            docker push $DOCKER_USER/three-tier-frontend:${TAG}
-            docker push $DOCKER_USER/three-tier-frontend:latest
+            docker tag admin:${TAG} $ECR_URL/admin:${TAG}
+            docker tag admin:${TAG} $ECR_URL/admin:latest
 
-            docker push $DOCKER_USER/three-tier-backend:${TAG}
-            docker push $DOCKER_USER/three-tier-backend:latest
+            # Push Frontend
+            docker push $ECR_URL/frontend:${TAG}
+            docker push $ECR_URL/frontend:latest
 
-            docker push $DOCKER_USER/three-tier-admin:${TAG}
-            docker push $DOCKER_USER/three-tier-admin:latest
+            # Push Backend
+            docker push $ECR_URL/backend:${TAG}
+            docker push $ECR_URL/backend:latest
 
-            # Cleanup
-            docker rmi frontend:${TAG} || true
-            docker rmi backend:${TAG} || true
-            docker rmi admin:${TAG} || true
+            # Push Admin
+            docker push $ECR_URL/admin:${TAG}
+            docker push $ECR_URL/admin:latest
 
-            docker rmi $DOCKER_USER/three-tier-frontend:${TAG} || true
-            docker rmi $DOCKER_USER/three-tier-frontend:latest || true
-
-            docker rmi $DOCKER_USER/three-tier-backend:${TAG} || true
-            docker rmi $DOCKER_USER/three-tier-backend:latest || true
-
-            docker rmi $DOCKER_USER/three-tier-admin:${TAG} || true
-            docker rmi $DOCKER_USER/three-tier-admin:latest || true
-
-            docker image prune -af || true
-
-            docker logout
+            docker logout $ECR_URL
             '''
         }
     }
-} 
+}
 
 }
     
