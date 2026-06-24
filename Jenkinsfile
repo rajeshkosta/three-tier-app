@@ -375,6 +375,24 @@ stages {
             docker push $ECR_URL/three-tier-admin:${TAG}
             docker push $ECR_URL/three-tier-admin:latest
 
+            # Cleanup local images
+            docker rmi frontend:${TAG} || true
+            docker rmi backend:${TAG} || true
+            docker rmi admin:${TAG} || true
+
+            # Cleanup ECR tagged images
+            docker rmi $ECR_URL/three-tier-frontend:${TAG} || true
+            docker rmi $ECR_URL/three-tier-frontend:latest || true
+
+            docker rmi $ECR_URL/three-tier-backend:${TAG} || true
+            docker rmi $ECR_URL/three-tier-backend:latest || true
+
+            docker rmi $ECR_URL/three-tier-admin:${TAG} || true
+            docker rmi $ECR_URL/three-tier-admin:latest || true
+
+            # Remove dangling images
+            docker image prune -af || true
+
             docker logout $ECR_URL
             '''
         }
