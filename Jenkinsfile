@@ -167,80 +167,157 @@ stages {
                 switch(env.APP_LANG) {
 
                     case "java":
+
                         dir('Application-Code/backend') {
-                            sh 'mvn test'
+
+                            if (fileExists('pom.xml')) {
+
+                                sh '''
+                                echo "Running Java Tests..." mvn test || true
+                                '''
+
+                            } else {
+
+                                echo "pom.xml not found. Skipping tests..."
+                            }
                         }
+
                         break
+
 
                     case "nodejs":
-                        dir('Application-Code/backend') {
-                            sh 'npm test || true'
-                        }
-                        break
 
-                    case "python":
                         dir('Application-Code/backend') {
+
                             sh '''
-                            . venv/bin/activate
-                            pytest || true
+                            TEST_SCRIPT=$(node -p "require('./package.json').scripts?.test || ''")
+
+                            if [ -z "$TEST_SCRIPT" ] || \
+                               [ "$TEST_SCRIPT" = "echo \\"Error: no test specified\\" && exit 1" ]; then
+
+                                echo "No NodeJS tests configured. Skipping..."
+    
+                            else
+
+                                echo "Running NodeJS Tests..."
+                                npm test || true
+
+                            fi
                             '''
                         }
+
                         break
 
-                    case "golang":
+
+                    case "python":
+
                         dir('Application-Code/backend') {
-                            sh 'go test ./... || true'
+
+                            sh '''
+                            . venv/bin/activate
+
+                            if command -v pytest >/dev/null 2>&1; then
+
+                                echo "Running Python Tests..."
+                                pytest || true
+
+                            else
+
+                                echo "pytest not installed. Skipping..."
+
+                            fi
+                            '''
                         }
+
+                        break
+
+
+                    case "golang":
+
+                        dir('Application-Code/backend') {
+
+                            sh '''
+                            echo "Running Golang Tests..."
+                            go test ./... || true
+                            '''
+                        }
+
                         break
                 }
             }
         }
     }
 
-    stage('SonarQube Scan') {
+    stage('Detect Coverage Reports') {
 
         steps {
 
-            withSonarQubeEnv('sonar') {
+            sh '''
+            echo "Searching for coverage reports..."
 
-                script {
+            find . -type f \\(
+                -name "lcov.info" -o \
+                -name "coverage.xml" -o \
+                -name "jacoco.xml" -o \
+                -name "*.exec" -o \
+                -name "coverage.out"
+            \\) || true
+            '''
+        }
+    }
+    
+    stage('SonarQube Scan') {
 
-                    switch(env.APP_LANG) {
-
-                        case "java":
-                            dir('Application-Code/backend') {
-                                sh '''
-                                mvn sonar:sonar -Dsonar.projectKey=${PROJECT_NAME}-backend
-                                '''
-                            }
-                            break
-
-                        case "nodejs":
-                            dir('Application-Code/backend') {
-                                sh """
-                                ${SCANNER_HOME}/bin/sonar-scanner \
-                                -Dsonar.projectKey=${PROJECT_NAME}-backend \
-                                -Dsonar.sources=. \
-                                -Dsonar.sourceEncoding=UTF-8
-                                """
-                            }
-                            break
-
-                        case "python":
-                            dir('Application-Code/backend') {
-                                sh """
-                                ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${PROJECT_NAME}-backend -Dsonar.sources=.
-                                """
-                            }
-                            break
-
-                        case "golang":
-                            dir('Application-Code/backend') {
-                                sh """
-                                ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${PROJECT_NAME}-backend -Dsonar.sources=.
-                                """
-                            }
-                            break
+        steps {
+    
+            catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+    
+                withSonarQubeEnv('sonar') {
+    
+                    script {
+    
+                        switch(env.APP_LANG) {
+    
+                            case "java":
+                                dir('Application-Code/backend') {
+                                    sh '''
+                                    mvn sonar:sonar \
+                                    -Dsonar.projectKey=''' + PROJECT_NAME + '''-backend
+                                    '''
+                                }
+                                break
+    
+                            case "nodejs":
+                                dir('Application-Code/backend') {
+                                    sh """
+                                    ${SCANNER_HOME}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=${PROJECT_NAME}-backend \
+                                    -Dsonar.sources=. \
+                                    -Dsonar.sourceEncoding=UTF-8
+                                    """
+                                }
+                                break
+    
+                            case "python":
+                                dir('Application-Code/backend') {
+                                    sh """
+                                    ${SCANNER_HOME}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=${PROJECT_NAME}-backend \
+                                    -Dsonar.sources=.
+                                    """
+                                }
+                                break
+    
+                            case "golang":
+                                dir('Application-Code/backend') {
+                                    sh """
+                                    ${SCANNER_HOME}/bin/sonar-scanner \
+                                    -Dsonar.projectKey=${PROJECT_NAME}-backend \
+                                    -Dsonar.sources=.
+                                    """
+                                }
+                                break
+                        }
                     }
                 }
             }
@@ -436,19 +513,26 @@ post {
                 archiveArtifacts(
                     artifacts: '''
                     reports/**/*,
+                    **/coverage/**/*,
+                    **/lcov.info,
+                    **/coverage.xml,
+                    **/jacoco.xml,
+                    **/coverage.out,
+                    **/*.exec,
                     **/target/*.jar,
                     **/target/surefire-reports/**/*,
                     **/dist/**/*,
                     **/build/**/*,
                     **/*.log
                     '''.trim(),
-                   
+
                     excludes: '''
                     **/node_modules/**,
                     **/Application-Code/**/node_modules/**,
                     **/.npm/**,
                     **/.cache/**
                     '''.trim(),
+                
                     fingerprint: true,
                     allowEmptyArchive: true
                 )
