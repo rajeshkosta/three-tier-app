@@ -2,6 +2,14 @@ pipeline {
 
 agent any
 
+parameters {
+    string(
+        name: 'PROJECT_NAME',
+        defaultValue: 'three-tier',
+        description: 'Project Name'
+    )
+}
+
 environment {
     FRONTEND_IMAGE = "frontend"
     ADMIN_IMAGE = "admin"
@@ -202,8 +210,7 @@ stages {
                         case "java":
                             dir('Application-Code/backend') {
                                 sh '''
-                                mvn sonar:sonar \
-                                -Dsonar.projectKey=backend
+                                mvn sonar:sonar -Dsonar.projectKey=${PROJECT_NAME}-backend
                                 '''
                             }
                             break
@@ -212,7 +219,7 @@ stages {
                             dir('Application-Code/backend') {
                                 sh """
                                 ${SCANNER_HOME}/bin/sonar-scanner \
-                                -Dsonar.projectKey=backend \
+                                -Dsonar.projectKey=${PROJECT_NAME}-backend \
                                 -Dsonar.sources=. \
                                 -Dsonar.sourceEncoding=UTF-8
                                 """
@@ -222,9 +229,7 @@ stages {
                         case "python":
                             dir('Application-Code/backend') {
                                 sh """
-                                ${SCANNER_HOME}/bin/sonar-scanner \
-                                -Dsonar.projectKey=backend \
-                                -Dsonar.sources=.
+                                ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${PROJECT_NAME}-backend -Dsonar.sources=.
                                 """
                             }
                             break
@@ -232,9 +237,7 @@ stages {
                         case "golang":
                             dir('Application-Code/backend') {
                                 sh """
-                                ${SCANNER_HOME}/bin/sonar-scanner \
-                                -Dsonar.projectKey=backend \
-                                -Dsonar.sources=.
+                                ${SCANNER_HOME}/bin/sonar-scanner -Dsonar.projectKey=${PROJECT_NAME}-backend -Dsonar.sources=.
                                 """
                             }
                             break
@@ -264,16 +267,11 @@ stages {
         }
         steps {
             sh """
-            docker build \
-            -t ${FRONTEND_IMAGE}:${TAG} \
-            -f Application-Code/frontend/Dockerfile \
-            Application-Code/frontend
+            docker build -t ${FRONTEND_IMAGE}:${TAG} -f Application-Code/frontend/Dockerfile Application-Code/frontend
             """
         }
     }
 
-    
-    
 
     stage('Build Backend Image') {
 
@@ -285,15 +283,12 @@ stages {
 
         steps {
             sh """
-            docker build \
-            -t ${BACKEND_IMAGE}:${TAG} \
-            -f Application-Code/backend/Dockerfile \
-            Application-Code/backend
+            docker build -t ${BACKEND_IMAGE}:${TAG} -f Application-Code/backend/Dockerfile Application-Code/backend
             """
         }
     }
 
-    stage('Build admin Image') {
+    stage('Build Admin Image') {
 
         when {
             expression {
@@ -303,10 +298,7 @@ stages {
 
         steps {
             sh """
-            docker build \
-            -t ${ADMIN_IMAGE}:${TAG} \
-            -f Application-Code/admin/Dockerfile \
-            Application-Code/admin
+            docker build -t ${ADMIN_IMAGE}:${TAG} -f Application-Code/admin/Dockerfile Application-Code/admin
             """
         }
     }
@@ -318,11 +310,27 @@ stages {
 
             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
 
-                sh """
+                sh '''
                 mkdir -p reports
-                trivy image --format json --output reports/trivy-frontend-image-report.json ${FRONTEND_IMAGE}:${TAG}
-                trivy image --format json --output reports/trivy-backend-image-report.json ${BACKEND_IMAGE}:${TAG}
-                """
+
+                docker image inspect frontend:${TAG} >/dev/null 2>&1 && \
+                trivy image \
+                --format json \
+                --output reports/trivy-frontend-image-report.json \
+                frontend:${TAG} || true
+
+                docker image inspect backend:${TAG} >/dev/null 2>&1 && \
+                trivy image \
+                --format json \
+                --output reports/trivy-backend-image-report.json \
+                backend:${TAG} || true
+
+                docker image inspect admin:${TAG} >/dev/null 2>&1 && \
+                trivy image \
+                --format json \
+                --output reports/trivy-admin-image-report.json \
+                admin:${TAG} || true
+                '''
             }
         }
     }
@@ -343,37 +351,51 @@ stages {
 
             ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
+            FRONTEND_REPO=${PROJECT_NAME}-frontend
+            BACKEND_REPO=${PROJECT_NAME}-backend
+            ADMIN_REPO=${PROJECT_NAME}-admin
+
             # Login to ECR
             aws ecr get-login-password --region $AWS_REGION | \
             docker login --username AWS --password-stdin $ECR_URL
 
-            # Build Images
-            docker build -t frontend:${TAG} ./Application-Code/frontend
-            docker build -t backend:${TAG} ./Application-Code/backend
-            docker build -t admin:${TAG} ./Application-Code/admin
+            # Frontend
+            if docker image inspect frontend:${TAG} >/dev/null 2>&1; then
 
-            # Tag Images
+                docker tag frontend:${TAG} $ECR_URL/${FRONTEND_REPO}:${TAG}
+                docker tag frontend:${TAG} $ECR_URL/${FRONTEND_REPO}:latest
 
-            docker tag frontend:${TAG} $ECR_URL/three-tier-frontend:${TAG}
-            docker tag frontend:${TAG} $ECR_URL/three-tier-frontend:latest
+                docker push $ECR_URL/${FRONTEND_REPO}:${TAG}
+                docker push $ECR_URL/${FRONTEND_REPO}:latest
 
-            docker tag backend:${TAG} $ECR_URL/three-tier-backend:${TAG}
-            docker tag backend:${TAG} $ECR_URL/three-tier-backend:latest
+            fi
 
-            docker tag admin:${TAG} $ECR_URL/three-tier-admin:${TAG}
-            docker tag admin:${TAG} $ECR_URL/three-tier-admin:latest
+            # Backend
+            if docker image inspect backend:${TAG} >/dev/null 2>&1; then
 
-            # Push Frontend
-            docker push $ECR_URL/three-tier-frontend:${TAG}
-            docker push $ECR_URL/three-tier-frontend:latest
+                docker tag backend:${TAG} $ECR_URL/${BACKEND_REPO}:${TAG}
+                docker tag backend:${TAG} $ECR_URL/${BACKEND_REPO}:latest
 
-            # Push Backend
-            docker push $ECR_URL/three-tier-backend:${TAG}
-            docker push $ECR_URL/three-tier-backend:latest
+                docker push $ECR_URL/${BACKEND_REPO}:${TAG}
+                docker push $ECR_URL/${BACKEND_REPO}:latest
 
-            # Push Admin
-            docker push $ECR_URL/three-tier-admin:${TAG}
-            docker push $ECR_URL/three-tier-admin:latest
+            fi
+
+            # Admin
+            if docker image inspect admin:${TAG} >/dev/null 2>&1; then
+
+                docker tag admin:${TAG} $ECR_URL/${ADMIN_REPO}:${TAG}
+                docker tag admin:${TAG} $ECR_URL/${ADMIN_REPO}:latest
+
+                docker push $ECR_URL/${ADMIN_REPO}:${TAG}
+                docker push $ECR_URL/${ADMIN_REPO}:latest
+
+            fi
+            #################################
+            # CLEANUP
+            #################################
+
+            echo "Cleaning Docker Images..."
 
             # Cleanup local images
             docker rmi frontend:${TAG} || true
@@ -381,19 +403,20 @@ stages {
             docker rmi admin:${TAG} || true
 
             # Cleanup ECR tagged images
-            docker rmi $ECR_URL/three-tier-frontend:${TAG} || true
-            docker rmi $ECR_URL/three-tier-frontend:latest || true
+            docker rmi $ECR_URL/${FRONTEND_REPO}:${TAG} || true
+            docker rmi $ECR_URL/${FRONTEND_REPO}:latest || true
 
-            docker rmi $ECR_URL/three-tier-backend:${TAG} || true
-            docker rmi $ECR_URL/three-tier-backend:latest || true
+            docker rmi $ECR_URL/${BACKEND_REPO}:${TAG} || true
+            docker rmi $ECR_URL/${BACKEND_REPO}:latest || true
 
-            docker rmi $ECR_URL/three-tier-admin:${TAG} || true
-            docker rmi $ECR_URL/three-tier-admin:latest || true
+            docker rmi $ECR_URL/${ADMIN_REPO}:${TAG} || true
+            docker rmi $ECR_URL/${ADMIN_REPO}:latest || true
 
             # Remove dangling images
             docker image prune -af || true
 
-            docker logout $ECR_URL
+            docker logout $ECR_URL || true
+
             '''
         }
     }
