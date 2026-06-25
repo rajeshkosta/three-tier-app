@@ -251,16 +251,17 @@ stages {
     stage('Detect Coverage Reports') {
 
         steps {
-
+    
             sh '''
             echo "Searching for coverage reports..."
-
-            find . -type f \\(
+    
+            find . -type f \
+            \\( \
                 -name "lcov.info" -o \
                 -name "coverage.xml" -o \
                 -name "jacoco.xml" -o \
                 -name "*.exec" -o \
-                -name "coverage.out"
+                -name "coverage.out" \
             \\) || true
             '''
         }
