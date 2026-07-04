@@ -437,6 +437,34 @@ stages {
             aws ecr get-login-password --region $AWS_REGION | \
             docker login --username AWS --password-stdin $ECR_URL
 
+            echo "Checking ECR repositories..."
+
+            # Frontend Repository
+            aws ecr describe-repositories \
+            --repository-names $FRONTEND_REPO \
+            --region $AWS_REGION >/dev/null 2>&1 || \
+            aws ecr create-repository \
+            --repository-name $FRONTEND_REPO \
+            --region $AWS_REGION
+            
+            # Backend Repository
+            aws ecr describe-repositories \
+            --repository-names $BACKEND_REPO \
+            --region $AWS_REGION >/dev/null 2>&1 || \
+            aws ecr create-repository \
+            --repository-name $BACKEND_REPO \
+            --region $AWS_REGION
+            
+            # Admin Repository
+            aws ecr describe-repositories \
+            --repository-names $ADMIN_REPO \
+            --region $AWS_REGION >/dev/null 2>&1 || \
+            aws ecr create-repository \
+            --repository-name $ADMIN_REPO \
+            --region $AWS_REGION
+            
+            echo "Repositories are ready."
+
             # Frontend
             if docker image inspect frontend:${TAG} >/dev/null 2>&1; then
 
