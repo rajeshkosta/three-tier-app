@@ -273,7 +273,7 @@ stages {
     
             catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
     
-                withSonarQubeEnv('sonar') {
+                withSonarQubeEnv('sonarqube') {
     
                     script {
     
