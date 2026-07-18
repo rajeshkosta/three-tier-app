@@ -11,6 +11,7 @@ parameters {
 }
 
 environment {
+    PROJECT_NAME = "${params.PROJECT_NAME}"
     FRONTEND_IMAGE = "frontend"
     ADMIN_IMAGE = "admin"
     BACKEND_IMAGE = "backend"
