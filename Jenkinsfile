@@ -534,115 +534,117 @@ stages {
     }
 }
         
-#    stage('Build & Push Docker Images to ECR') {
+// #    stage('Build & Push Docker Images to ECR') {
 
-#    steps {
+// #    steps {
 
-#        withCredentials([
-#            [$class: 'AmazonWebServicesCredentialsBinding',
-#             credentialsId: 'aws-ecr-cred']
-#        ]) {
+// #        withCredentials([
+// #            [$class: 'AmazonWebServicesCredentialsBinding',
+// #             credentialsId: 'aws-ecr-cred']
+// #        ]) {
 
-#            sh '''
-#            ACCOUNT_ID=593402827159
-#            AWS_REGION=ap-south-1
+// #            sh '''
+// #            ACCOUNT_ID=593402827159
+// #            AWS_REGION=ap-south-1
 
-#            ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
+// #            ECR_URL=$ACCOUNT_ID.dkr.ecr.$AWS_REGION.amazonaws.com
 
-#            FRONTEND_REPO=${PROJECT_NAME}-frontend
-#            BACKEND_REPO=${PROJECT_NAME}-backend
-#            ADMIN_REPO=${PROJECT_NAME}-admin
+// #            FRONTEND_REPO=${PROJECT_NAME}-frontend
+// #            BACKEND_REPO=${PROJECT_NAME}-backend
+// #            ADMIN_REPO=${PROJECT_NAME}-admin
 
-            # Login to ECR
-#            aws ecr get-login-password --region $AWS_REGION | \
-#            docker login --username AWS --password-stdin $ECR_URL
-#            echo "Checking ECR repositories..."
+//             # Login to ECR
+// #            aws ecr get-login-password --region $AWS_REGION | \
+// #            docker login --username AWS --password-stdin $ECR_URL
+// #            echo "Checking ECR repositories..."
 
-            # Frontend Repository
-#            aws ecr describe-repositories \
-#            --repository-names $FRONTEND_REPO \
-#            --region $AWS_REGION >/dev/null 2>&1 || \
-#            aws ecr create-repository \
-#            --repository-name $FRONTEND_REPO \
-#            --region $AWS_REGION
+//             # Frontend Repository
+// #            aws ecr describe-repositories \
+// #            --repository-names $FRONTEND_REPO \
+// #            --region $AWS_REGION >/dev/null 2>&1 || \
+// #            aws ecr create-repository \
+// #            --repository-name $FRONTEND_REPO \
+// #            --region $AWS_REGION
             
-            # Backend Repository
-#            aws ecr describe-repositories \
-#            --repository-names $BACKEND_REPO \
-#            --region $AWS_REGION >/dev/null 2>&1 || \
-#            aws ecr create-repository \
-#            --repository-name $BACKEND_REPO \
-#            --region $AWS_REGION
+//             # Backend Repository
+// #            aws ecr describe-repositories \
+// #            --repository-names $BACKEND_REPO \
+// #            --region $AWS_REGION >/dev/null 2>&1 || \
+// #            aws ecr create-repository \
+// #            --repository-name $BACKEND_REPO \
+// #            --region $AWS_REGION
             
-            # Admin Repository
-#            aws ecr describe-repositories \
-#            --repository-names $ADMIN_REPO \
-#            --region $AWS_REGION >/dev/null 2>&1 || \
-#            aws ecr create-repository \
-#            --repository-name $ADMIN_REPO \
-#            --region $AWS_REGION
+//             # Admin Repository
+// #            aws ecr describe-repositories \
+// #            --repository-names $ADMIN_REPO \
+// #            --region $AWS_REGION >/dev/null 2>&1 || \
+// #            aws ecr create-repository \
+// #            --repository-name $ADMIN_REPO \
+// #            --region $AWS_REGION
             
-#            echo "Repositories are ready."
+// #            echo "Repositories are ready."
 
-            # Frontend
-#            if docker image inspect frontend:${TAG} >/dev/null 2>&1; then
+//             # Frontend
+// #            if docker image inspect frontend:${TAG} >/dev/null 2>&1; then
 
-#                docker tag frontend:${TAG} $ECR_URL/${FRONTEND_REPO}:${TAG}
-#                docker tag frontend:${TAG} $ECR_URL/${FRONTEND_REPO}:latest
+// #                docker tag frontend:${TAG} $ECR_URL/${FRONTEND_REPO}:${TAG}
+// #                docker tag frontend:${TAG} $ECR_URL/${FRONTEND_REPO}:latest
 
-#                docker push $ECR_URL/${FRONTEND_REPO}:${TAG}
-#                docker push $ECR_URL/${FRONTEND_REPO}:latest
+// #                docker push $ECR_URL/${FRONTEND_REPO}:${TAG}
+// #                docker push $ECR_URL/${FRONTEND_REPO}:latest
 
-#            fi
+// #            fi
 
-            # Backend
-#            if docker image inspect backend:${TAG} >/dev/null 2>&1; then
+//             # Backend
+// #            if docker image inspect backend:${TAG} >/dev/null 2>&1; then
 
-#                docker tag backend:${TAG} $ECR_URL/${BACKEND_REPO}:${TAG}
-#                docker tag backend:${TAG} $ECR_URL/${BACKEND_REPO}:latest
+// #                docker tag backend:${TAG} $ECR_URL/${BACKEND_REPO}:${TAG}
+// #                docker tag backend:${TAG} $ECR_URL/${BACKEND_REPO}:latest
 
-#                docker push $ECR_URL/${BACKEND_REPO}:${TAG}
-#                docker push $ECR_URL/${BACKEND_REPO}:latest
+// #                docker push $ECR_URL/${BACKEND_REPO}:${TAG}
+// #                docker push $ECR_URL/${BACKEND_REPO}:latest
 
-#            fi
+// #            fi
 
-            # Admin
-#            if docker image inspect admin:${TAG} >/dev/null 2>&1; then
+//             # Admin
+// #            if docker image inspect admin:${TAG} >/dev/null 2>&1; then
 
-#                docker tag admin:${TAG} $ECR_URL/${ADMIN_REPO}:${TAG}
-#                docker tag admin:${TAG} $ECR_URL/${ADMIN_REPO}:latest
+// #                docker tag admin:${TAG} $ECR_URL/${ADMIN_REPO}:${TAG}
+// #                docker tag admin:${TAG} $ECR_URL/${ADMIN_REPO}:latest
 
-#                docker push $ECR_URL/${ADMIN_REPO}:${TAG}
-#                docker push $ECR_URL/${ADMIN_REPO}:latest
+// #                docker push $ECR_URL/${ADMIN_REPO}:${TAG}
+// #                docker push $ECR_URL/${ADMIN_REPO}:latest
 
-#            fi
-            #################################
-            # CLEANUP
-            #################################
+// #            fi
+//             #################################
+//             # CLEANUP
+//             #################################
 
-#            echo "Cleaning Docker Images..."
+// #            echo "Cleaning Docker Images..."
 
-            # Cleanup local images
-#            docker rmi frontend:${TAG} || true
-#            docker rmi backend:${TAG} || true
-#            docker rmi admin:${TAG} || true
+//             # Cleanup local images
+// #            docker rmi frontend:${TAG} || true
+// #            docker rmi backend:${TAG} || true
+// #            docker rmi admin:${TAG} || true
 
-            # Cleanup ECR tagged images
-#            docker rmi $ECR_URL/${FRONTEND_REPO}:${TAG} || true
-#            docker rmi $ECR_URL/${FRONTEND_REPO}:latest || true
+//             # Cleanup ECR tagged images
+// #            docker rmi $ECR_URL/${FRONTEND_REPO}:${TAG} || true
+// #            docker rmi $ECR_URL/${FRONTEND_REPO}:latest || true
 
-#            docker rmi $ECR_URL/${BACKEND_REPO}:${TAG} || true
-#            docker rmi $ECR_URL/${BACKEND_REPO}:latest || true
+// #            docker rmi $ECR_URL/${BACKEND_REPO}:${TAG} || true
+// #            docker rmi $ECR_URL/${BACKEND_REPO}:latest || true
 
-#            docker rmi $ECR_URL/${ADMIN_REPO}:${TAG} || true
-#            docker rmi $ECR_URL/${ADMIN_REPO}:latest || true
+// #            docker rmi $ECR_URL/${ADMIN_REPO}:${TAG} || true
+// #            docker rmi $ECR_URL/${ADMIN_REPO}:latest || true
 
-#            docker logout $ECR_URL || true
+// #            docker logout $ECR_URL || true
 
-#            '''
-#        }
-#    }
-#}  
+// #            '''
+// #        }
+// #    }
+// #}  
+
+}
 
 post {
 
