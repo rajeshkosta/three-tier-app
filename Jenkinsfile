@@ -4,7 +4,7 @@ pipeline {
     parameters {
         string(
             name: 'PROJECT_NAME',
-            defaultValue: 'wanderlust',
+            defaultValue: 'three-tier-app',
             description: 'Project Name'
         )
     }
