@@ -785,16 +785,16 @@ pipeline {
                     git fetch origin
                     git checkout -B main origin/main
                     
-                    yq -i '.frontend.image.tag = "${TAG}"' wanderlust/values-dev.yaml
-                    yq -i '.backend.image.tag = "${TAG}"' wanderlust/values-dev.yaml
+                    yq -i '.frontend.image.tag = "${TAG}"' tta/dev-values.yaml
+                    yq -i '.backend.image.tag = "${TAG}"' tta/dev-values.yaml
     
                     git config user.name "rajeshkosta"
                     git config user.email "rajesh.kosta8982@yahoo.com"
     
-                    git add wanderlust/values-dev.yaml
+                    git add tta/dev-values.yaml
                     git commit -m "Deploy build ${TAG} to Dev" || true
     
-                    git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rajeshkosta/wanderlust.git
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rajeshkosta/three-tier-app.git
                     git push origin main
                     """
                 }
@@ -824,13 +824,13 @@ pipeline {
                     )
                 ]) {
                     sh """
-                    yq -i '.frontend.image.tag = "${TAG}"' wanderlust/values-stage.yaml
-                    yq -i '.backend.image.tag = "${TAG}"' wanderlust/values-stage.yaml
+                    yq -i '.frontend.image.tag = "${TAG}"' tta/stage-values.yaml
+                    yq -i '.backend.image.tag = "${TAG}"' tta/stage-values.yaml
     
-                    git add wanderlust/values-stage.yaml
+                    git add tta/stage-values.yaml
                     git commit -m "Deploy build ${TAG} to Stage" || true
     
-                    git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rajeshkosta/wanderlust.git
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rajeshkosta/three-tier-app.git
                     git push origin main
                     """
                 }
@@ -860,13 +860,13 @@ pipeline {
                     )
                 ]) {
                     sh """
-                    yq -i '.frontend.image.tag = "${TAG}"' wanderlust/values-prod.yaml
-                    yq -i '.backend.image.tag = "${TAG}"' wanderlust/values-prod.yaml
+                    yq -i '.frontend.image.tag = "${TAG}"' tta/prod-values.yaml
+                    yq -i '.backend.image.tag = "${TAG}"' tta/prod-values.yaml
     
-                    git add wanderlust/values-prod.yaml
+                    git add tta/prod-values.yaml
                     git commit -m "Deploy build ${TAG} to Production" || true
     
-                    git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rajeshkosta/wanderlust.git
+                    git remote set-url origin https://${GIT_USERNAME}:${GIT_PASSWORD}@github.com/rajeshkosta/three-tier-app.git
                     git push origin main
                     """
                 }
