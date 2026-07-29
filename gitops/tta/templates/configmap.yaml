@@ -1,0 +1,14 @@
+{{- if .Values.backend.config }}
+
+apiVersion: v1
+kind: ConfigMap
+
+metadata:
+  name: backend-config
+
+data:
+{{- range $key, $value := .Values.backend.config }}
+  {{ $key }}: {{ $value | quote }}
+{{- end }}
+
+{{- end }}
