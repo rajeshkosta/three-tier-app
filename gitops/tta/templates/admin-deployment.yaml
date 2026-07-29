@@ -1,0 +1,98 @@
+apiVersion: apps/v1
+kind: Deployment
+
+metadata:
+  name: admin
+
+  labels:
+    app: admin
+
+spec:
+  replicas: {{ .Values.admin.replicaCount }}
+
+  revisionHistoryLimit: {{ .Values.revisionHistoryLimit }}
+
+  strategy:
+    type: {{ .Values.strategy.type }}
+    rollingUpdate:
+      maxUnavailable: {{ .Values.strategy.rollingUpdate.maxUnavailable }}
+      maxSurge: {{ .Values.strategy.rollingUpdate.maxSurge }}
+
+  selector:
+    matchLabels:
+      app: admin
+
+  template:
+    metadata:
+      labels:
+        app: admin
+
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+    spec:
+
+      terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
+
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+
+      containers:
+        - name: admin
+
+          image: "{{ .Values.admin.image.repository }}:{{ .Values.admin.image.tag }}"
+
+          imagePullPolicy: {{ .Values.admin.image.pullPolicy }}
+
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+
+          ports:
+            - name: http
+              containerPort: {{ .Values.admin.service.targetPort }}
+              protocol: TCP
+
+          resources:
+            {{- toYaml .Values.admin.resources | nindent 12 }}
+
+          livenessProbe:
+            {{- toYaml .Values.admin.livenessProbe | nindent 12 }}
+
+          readinessProbe:
+            {{- toYaml .Values.admin.readinessProbe | nindent 12 }}
+
+          {{- with .Values.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      {{- with .Values.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
