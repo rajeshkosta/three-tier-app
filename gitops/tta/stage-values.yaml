@@ -3,28 +3,21 @@
 # ------------------------------------------------------------------------------
 nameOverride: ""
 fullnameOverride: ""
-
 imagePullSecrets: []
-
 # ------------------------------------------------------------------------------
 # Frontend Configuration
 # ------------------------------------------------------------------------------
 frontend:
-
   replicaCount: 2
-
   image:
     repository: rajeshkosta/three-tier-app-frontend
-    tag: latest
+    tag: "10"
     pullPolicy: Always
-
   service:
     name: frontend-svc
     type: ClusterIP
     port: 80
     targetPort: 80
-
-
   resources:
     requests:
       cpu: 100m
@@ -32,57 +25,45 @@ frontend:
     limits:
       cpu: 500m
       memory: 512Mi
-
   livenessProbe:
     httpGet:
       path: /
       port: 80
     initialDelaySeconds: 20
     periodSeconds: 10
-
   readinessProbe:
     httpGet:
       path: /
       port: 80
     initialDelaySeconds: 5
     periodSeconds: 5
-
-
 # ------------------------------------------------------------------------------
 # Backend Configuration
 # ------------------------------------------------------------------------------
 backend:
-
   replicaCount: 2
-
   image:
     repository: rajeshkosta/three-tier-app-backend
-    tag: latest
+    tag: "10"
     pullPolicy: Always
-
   serviceAccount:
     create: true
     name: backend-sa
-
   service:
     name: backend-svc
     type: ClusterIP
     port: 80
     targetPort: 3500
-
-
   config:
     NODE_ENV: production
     PORT: "3500"
     APP_NAME: tta-backend
     API_VERSION: v1
     LOG_LEVEL: debug
-
   secret:
     MONGODB_URI: mongodb://admin:admin123@mongodb.mongodb.svc.cluster.local:27017/test?authSource=admin
     REDIS_URL: redis://redis:6379
     JWT_SECRET: mySuperSecretKey
-
   resources:
     requests:
       cpu: 100m
@@ -90,40 +71,32 @@ backend:
     limits:
       cpu: 500m
       memory: 512Mi
-
   livenessProbe:
     httpGet:
       path: /ok
       port: 3500
     initialDelaySeconds: 20
     periodSeconds: 10
-
   readinessProbe:
     httpGet:
       path: /ok
       port: 3500
     initialDelaySeconds: 5
     periodSeconds: 5
-
-
-
 # ------------------------------------------------------------------------------
 # Admin Configuration
 # ------------------------------------------------------------------------------
 admin:
   replicaCount: 2
-
   image:
     repository: rajeshkosta/three-tier-app-admin
     tag: latest
     pullPolicy: Always
-
   service:
     name: admin-svc
     type: ClusterIP
     port: 80
     targetPort: 80
-
   resources:
     requests:
       cpu: 100m
@@ -131,21 +104,18 @@ admin:
     limits:
       cpu: 500m
       memory: 512Mi
-
   livenessProbe:
     httpGet:
       path: /
       port: 80
     initialDelaySeconds: 20
     periodSeconds: 10
-
   readinessProbe:
     httpGet:
       path: /
       port: 80
     initialDelaySeconds: 5
     periodSeconds: 5
-
 # ------------------------------------------------------------------------------
 # Horizontal Pod Autoscaling
 # ------------------------------------------------------------------------------
@@ -155,9 +125,6 @@ autoscaling:
   maxReplicas: 10
   targetCPUUtilizationPercentage: 70
   targetMemoryUtilizationPercentage: 80
-
-
-
 # ------------------------------------------------------------------------------
 # Ingress
 # Single Domain
@@ -167,7 +134,6 @@ autoscaling:
 # backend  -> /api
 # admin    -> /admin
 # ------------------------------------------------------------------------------
-
 ingress:
   enabled: true
   className: nginx
@@ -178,29 +144,23 @@ ingress:
       path: /
       service: frontend-svc
       port: 80
-
     backend:
       path: /api
       service: backend-svc
       port: 80
-
     admin:
       path: /admin
       service: admin-svc
       port: 80
-
 # ------------------------------------------------------------------------------
 # Scheduling
 # ------------------------------------------------------------------------------
-
 nodeSelector: {}
-
 tolerations:
   - key: workload
     operator: Equal
     value: application
     effect: NoSchedule
-
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
